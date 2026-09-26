@@ -1,0 +1,55 @@
+// Gegenleistungs-Karten aus dem Arbeitsplan. s: true = anzüglich (per Schalter ausblendbar)
+const STAGES = {
+  1: { name: 'Stufe 1', label: 'Kleinigkeit', hint: 'schnell erledigt, eher Geste' },
+  2: { name: 'Stufe 2', label: 'Einsatz', hint: 'kostet einen Abend oder etwas Überwindung' },
+  3: { name: 'Stufe 3', label: 'Hardcore', hint: 'aufwendig, peinlich oder sehr verwöhnend' },
+  4: { name: 'Stufe 4', label: 'Boss-Level', hint: 'das volle Programm' },
+  team: { name: 'Team', label: 'Team-Belohnung', hint: 'für euch beide' },
+};
+const CARDS = {
+  1: [
+    { t: 'Kaffee oder Tee ans Bett, am nächsten Morgen, mit Verbeugung.' },
+    { t: '24 Stunden lang den Gewinner mit einem Ehrentitel ansprechen, z. B. „Eure Hoheit der Hüftstreckung“ oder „Bizeps-Baron“.' },
+    { t: 'Der Gewinner bestimmt den nächsten Film oder die nächste Serie, ohne Widerspruch.' },
+    { t: '10 Sekunden Standing Ovations für den Siegertanz des Gewinners.' },
+    { t: 'Spülmaschine ausräumen, zweimal.' },
+    { t: '5 Minuten Nacken- oder Fußmassage.', s: true },
+    { t: 'Ein Kuss-Gutschein, 24 Stunden lang jederzeit auf Zuruf einlösbar.', s: true },
+    { t: 'Ein handgeschriebener Flirt-Zettel, irgendwo versteckt, wo der Gewinner ihn findet.', s: true },
+  ],
+  2: [
+    { t: 'Wochenendfrühstück zubereiten, inklusive Tisch decken.' },
+    { t: 'Einen Abend lang Butler oder Butlerin spielen: Geschirrtuch über dem Arm, jede Antwort beginnt mit „Sehr wohl“.' },
+    { t: 'Ein Lied nach Wahl des Gewinners mit voller Inbrunst vorsingen, Kochlöffel als Mikro.' },
+    { t: '10 Komplimente am Stück, keins darf sich wiederholen.' },
+    { t: 'Die nächste Wäscherunde komplett übernehmen: waschen, aufhängen, falten.' },
+    { t: '24 Stunden lang ein vom Gewinner gewähltes, absurdes Selfie als Profilbild im Familienchat.' },
+    { t: '15 Minuten Massage mit Öl, der Gewinner wählt die Körperregion.', s: true },
+    { t: 'Der Gewinner wählt das Outfit, das der Verlierer beim nächsten Abend zu Hause trägt.', s: true },
+    { t: 'Ein Bad oder eine Dusche mit Kerzen vorbereiten, Begleitung inklusive.', s: true },
+  ],
+  3: [
+    { t: 'Candle-Light-Dinner mit 3 Gängen kochen, Menükarte handgeschrieben.' },
+    { t: 'Ein Gedicht über den Po beziehungsweise die Oberarme des Gewinners schreiben und feierlich vortragen.' },
+    { t: 'Einen ganzen Tag lang jede Treppe mit Ausfallschritten hochgehen.' },
+    { t: 'Ein Abend, an dem der Gewinner alles entscheidet: Essen, Programm, Schlafenszeit.' },
+    { t: 'Ein „Ja-Gutschein“: Die nächste Bitte wird ohne Diskussion erfüllt, im Rahmen des Anstands.' },
+    { t: 'Eine Woche lang jeden Morgen das Bett machen.' },
+    { t: 'Ein Strip-Tanz zu einem Song, den der Gewinner aussucht.', s: true },
+    { t: '30 Minuten Verwöhn-Massage, Musik und Licht wählt der Gewinner.', s: true },
+  ],
+  4: [
+    { t: 'Ein komplettes Wochenende Haushalt übernehmen, plus Frühstück ans Bett am Sonntag.' },
+    { t: 'In einem selbst gebastelten Superhelden-Umhang den Müll rausbringen, Foto als Beweis.' },
+    { t: 'Eine Liebeserklärung als Sprachnachricht im Stil eines Fußballkommentators, mindestens 60 Sekunden.' },
+    { t: 'Ein Überraschungsdate planen und bezahlen, der Gewinner erfährt vorher nur die Uhrzeit.' },
+    { t: 'Eine Woche Kaffee-Service jeden Morgen.' },
+    { t: 'Der Gewinner schreibt das Drehbuch für einen gemeinsamen Abend, der Verlierer spielt mit.', s: true },
+    { t: 'Verführungsabend inszenieren: Deko, Musik, Outfit, alles vom Verlierer vorbereitet.', s: true },
+  ],
+  team: [
+    { t: 'Gemeinsam essen gehen, Restaurant per Münzwurf.' },
+    { t: 'Ein Wellness-Abend zu Hause mit Gesichtsmasken.' },
+    { t: 'Ein Ausflug am Wochenende, den beide abwechselnd planen.' },
+  ],
+};
