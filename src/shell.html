@@ -11,6 +11,7 @@
   --lemon:#F2C200; --lemon-ink:#6E5600; --lemon-soft:#FCEFAE;
   --lime:#5E9A2A; --lime-ink:#3F6B18; --lime-soft:#E2EFCC;
   --warn:#C2412D; --fig:#25231A; --fig-far:#ADA78E; --band:#D9486E; --mat:#BEDC95; --furn:#E4DBB8; --furn2:#D4C99F; --db:#E0A800; --db-hole:#FFFFFF;
+  --ball:#5FA8A3;
   --hanne:var(--lemon); --hanne-ink:var(--lemon-ink); --hanne-soft:var(--lemon-soft);
   --andi:var(--lime); --andi-ink:var(--lime-ink); --andi-soft:var(--lime-soft);
   --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
@@ -23,7 +24,7 @@
     --ground:#17160F; --surface:#221F16; --surface2:#2D2A1E; --ink:#F3EFD8; --ink2:#ABA58A; --line:#3A3728;
     --lemon:#F5CD2E; --lemon-ink:#F5CD2E; --lemon-soft:#3A3213;
     --lime:#93C95A; --lime-ink:#A9D873; --lime-soft:#26331A;
-    --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16;
+    --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16; --ball:#4E8F8A;
   }
 }
 :root[data-theme="dark"]{
@@ -31,7 +32,7 @@
   --ground:#17160F; --surface:#221F16; --surface2:#2D2A1E; --ink:#F3EFD8; --ink2:#ABA58A; --line:#3A3728;
   --lemon:#F5CD2E; --lemon-ink:#F5CD2E; --lemon-soft:#3A3213;
   --lime:#93C95A; --lime-ink:#A9D873; --lime-soft:#26331A;
-  --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16;
+  --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16; --ball:#4E8F8A;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -105,6 +106,7 @@ h3{font-size:16px;font-weight:600}
 .fig .p-nofill{fill:none}
 .fig .p-roller circle{fill:var(--fig)}
 .fig .p-rope{stroke:var(--band);stroke-width:1.8}
+.fig .p-ball{fill:var(--ball);opacity:.9}
 .exlist{display:flex;flex-direction:column;gap:8px}
 .ex{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px 8px 8px;text-align:left;width:100%}
 .ex .thumb{background:var(--surface2);border-radius:10px;padding:2px}
@@ -198,6 +200,9 @@ h3{font-size:16px;font-weight:600}
 .setup svg.lemonbig{width:80px;height:80px}
 body.is-setup .tabs,body.is-setup .who{display:none}
 @media (prefers-reduced-motion: reduce){.pcard .face{transition:none}}
+
+.rcard{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:var(--surface2);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600;line-height:1.35}
+.rcard.own{background:var(--lemon-soft)}
 
 /* Erfolge */
 .badges{display:flex;flex-direction:column;gap:10px}

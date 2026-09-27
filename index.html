@@ -20,6 +20,7 @@
   --lemon:#F2C200; --lemon-ink:#6E5600; --lemon-soft:#FCEFAE;
   --lime:#5E9A2A; --lime-ink:#3F6B18; --lime-soft:#E2EFCC;
   --warn:#C2412D; --fig:#25231A; --fig-far:#ADA78E; --band:#D9486E; --mat:#BEDC95; --furn:#E4DBB8; --furn2:#D4C99F; --db:#E0A800; --db-hole:#FFFFFF;
+  --ball:#5FA8A3;
   --hanne:var(--lemon); --hanne-ink:var(--lemon-ink); --hanne-soft:var(--lemon-soft);
   --andi:var(--lime); --andi-ink:var(--lime-ink); --andi-soft:var(--lime-soft);
   --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
@@ -32,7 +33,7 @@
     --ground:#17160F; --surface:#221F16; --surface2:#2D2A1E; --ink:#F3EFD8; --ink2:#ABA58A; --line:#3A3728;
     --lemon:#F5CD2E; --lemon-ink:#F5CD2E; --lemon-soft:#3A3213;
     --lime:#93C95A; --lime-ink:#A9D873; --lime-soft:#26331A;
-    --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16;
+    --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16; --ball:#4E8F8A;
   }
 }
 :root[data-theme="dark"]{
@@ -40,7 +41,7 @@
   --ground:#17160F; --surface:#221F16; --surface2:#2D2A1E; --ink:#F3EFD8; --ink2:#ABA58A; --line:#3A3728;
   --lemon:#F5CD2E; --lemon-ink:#F5CD2E; --lemon-soft:#3A3213;
   --lime:#93C95A; --lime-ink:#A9D873; --lime-soft:#26331A;
-  --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16;
+  --warn:#F07A63; --fig:#F3EFD8; --fig-far:#6F6A52; --band:#F0668C; --mat:#4B6230; --furn:#3E3A2B; --furn2:#4A4533; --db:#F5B800; --db-hole:#221F16; --ball:#4E8F8A;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -114,6 +115,7 @@ h3{font-size:16px;font-weight:600}
 .fig .p-nofill{fill:none}
 .fig .p-roller circle{fill:var(--fig)}
 .fig .p-rope{stroke:var(--band);stroke-width:1.8}
+.fig .p-ball{fill:var(--ball);opacity:.9}
 .exlist{display:flex;flex-direction:column;gap:8px}
 .ex{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px 8px 8px;text-align:left;width:100%}
 .ex .thumb{background:var(--surface2);border-radius:10px;padding:2px}
@@ -207,6 +209,9 @@ h3{font-size:16px;font-weight:600}
 .setup svg.lemonbig{width:80px;height:80px}
 body.is-setup .tabs,body.is-setup .who{display:none}
 @media (prefers-reduced-motion: reduce){.pcard .face{transition:none}}
+
+.rcard{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;background:var(--surface2);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600;line-height:1.35}
+.rcard.own{background:var(--lemon-soft)}
 
 /* Erfolge */
 .badges{display:flex;flex-direction:column;gap:10px}
@@ -348,11 +353,12 @@ const FIG = (() => {
     return `<g class="p-db"><circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="4.4"/><circle class="p-db-hole" cx="${f1(p[0])}" cy="${f1(p[1])}" r="1.3"/></g>`;
   }
 
-  function propsBack(props) {
+  function propsBack(props, J) {
     let s = '';
     const pr = props || {};
     if (pr.mat) s += `<rect class="p-mat" x="${pr.mat[0]}" y="${FLOOR - 1}" width="${pr.mat[1] - pr.mat[0]}" height="3" rx="1.5"/>`;
     if (pr.wall != null) s += `<rect class="p-furn" x="${pr.wall}" y="8" width="5" height="${FLOOR - 8}"/>`;
+    if (pr.ballBack != null && J) s += `<circle class="p-ball" cx="${f1(pr.ballBack)}" cy="${f1(J.hip[1] - 6)}" r="8.5"/>`;
     if (pr.door != null) s += `<rect class="p-door" x="${pr.door}" y="2" width="12" height="${FLOOR - 2}" rx="1"/>`;
     ['sofa', 'chair', 'box'].forEach((k) => {
       if (!pr[k]) return;
@@ -399,7 +405,7 @@ const FIG = (() => {
   function svgInner(ex, k) {
     const P = lerpPose(ex.A, ex.B, k || 0);
     const J = solve(P);
-    let s = propsBack(ex.props);
+    let s = propsBack(ex.props, J);
     // hinteres Bein/Arm heller
     s += `<g class="fig-far">${poly([J.hipL, J.kL, J.fL], 'limb')}${poly([J.shL, J.eL, J.wL], 'limb')}</g>`;
     if (J.front) s += line(J.hipL, J.hipR, 'limb') + line(J.shL, J.shR, 'limb');
@@ -463,8 +469,8 @@ const EXERCISES = [
     A: { hip: [82, 88], t: 180, h: 180, fR: [95, 91], fL: [94, 91], hR: [76, 91], hL: [75, 91], kb: -1, eb: -1 },
     B: { hip: [81, 78], t: 202, h: 180, fR: [95, 91], fL: [94, 91], hR: [75, 91], hL: [74, 91] },
     props: { mat: [26, 120] }, dur: 1.2 },
-  { id: 'band_pulse_bridge', cat: 'po', name: 'Band Pulse Bridge', metric: 'time', sets: 3, target: '30–45 s',
-    desc: 'Oben in der Brücke bleiben und die Knie gegen den Widerstand des Bandes nach außen pulsen. Becken bleibt oben.',
+  { id: 'band_pulse_bridge', cat: 'po', name: 'Band Pulse Bridge', metric: 'reps', sets: 3, target: '20–25',
+    desc: 'Oben in der Brücke bleiben und die Knie gegen den Widerstand des Bandes nach außen pulsen. Becken bleibt oben, jeder Puls zählt als Wiederholung.',
     equip: ['Matte', 'Band über den Knien'],
     A: { hip: [80, 73], t: 208, h: 180, fR: [102, 92], fL: [101, 92], hR: [74, 91], hL: [73, 91], kb: -1, eb: -1 },
     B: { hip: [80, 70], t: 212, h: 180, fR: [102, 92], fL: [101, 92], hR: [74, 91], hL: [73, 91] },
@@ -535,6 +541,36 @@ const EXERCISES = [
     A: { hip: [62, 73], t: 90, fR: [81, 92], fL: [80, 92], hR: [76, 72], hL: [75, 72] },
     B: { hip: [62, 73], t: 90, h: 95, fR: [81, 92], fL: [80, 92], hR: [76, 72], hL: [75, 72] },
     props: { wall: 50, bandKnees: 1 } },
+  { id: 'hip_hike_wall', cat: 'po', name: 'Hüfte heben an der Wand', metric: 'reps', side: true, sets: 3, target: '12–15',
+    desc: 'Seitlich neben einer Wand stehen, eine Hand zur Stütze anlegen. Auf dem wandfernen Bein stehen, das Becken auf der freien Seite absacken lassen, dann durch die seitliche Hüfte wieder hochziehen. Für mehr Reiz auf einer Stufe stehen oder das freie Bein dabei leicht vor und zurück schwenken.',
+    equip: ['Wand', 'optional Stufe'],
+    A: { hip: [86, 62], t: 90, fR: [96, 84], fL: [84, 92], hR: [118, 55], hL: [85, 64], kb: -1, kbL: -1, eb: -1 },
+    B: { hip: [86, 52], t: 90, fR: [96, 76], fL: [84, 92], hR: [118, 45], hL: [85, 54] },
+    props: { wall: 132 } },
+  { id: 'step_down', cat: 'po', name: 'Step-Down (Stufe runter)', metric: 'reps', side: true, sets: 3, target: '8–12',
+    desc: 'Auf einer Stufe oder einem stabilen Stuhl stehen, ein Bein hängt vorn in der Luft. Den Standfuß komplett aufstellen (ganze Sohle), langsam absenken, bis der freie Fuß den Boden leicht berührt, dann wieder hoch. Hüfte und Knie bleiben in einer geraden Linie, das Knie kippt nicht nach innen.',
+    equip: ['Stufe oder Stuhl'],
+    A: { hip: [100, 44], t: 90, fR: [101, 80], fL: [82, 88], hR: [100, 46], hL: [99, 46] },
+    B: { hip: [98, 62], t: 88, fR: [101, 80], fL: [82, 91], hR: [98, 64], hL: [97, 64], kb: -1 },
+    props: { box: [88, 80, 34] } },
+  { id: 'ball_wall_squat', cat: 'po', name: 'Wandkniebeuge mit Ball', metric: 'reps', sets: 3, target: '12–15',
+    desc: 'Gymnastikball zwischen unterem Rücken und Wand einklemmen, Füße hüftbreit und einen kleinen Schritt von der Wand entfernt. Kontrolliert in die Kniebeuge gehen, der Ball rollt an der Wirbelsäule entlang, dann wieder hoch. Variieren: Fußabstand zur Wand, Arme nach vorn oder über Kopf, oder das Gewicht mehr auf ein Bein verlagern.',
+    equip: ['Gymnastikball', 'Wand'],
+    A: { hip: [64, 50], t: 90, fR: [83, 92], fL: [81, 92], hR: [76, 52], hL: [75, 52] },
+    B: { hip: [66, 73], t: 90, fR: [83, 92], fL: [81, 92], hR: [78, 75], hL: [77, 75], kb: -1 },
+    props: { wall: 50, ballBack: 58 } },
+  { id: 'side_lying_leg_lower', cat: 'po', name: 'Seitlage: Bein langsam senken', metric: 'reps', side: true, sets: 3, target: '10–12',
+    desc: 'Seitlage, unteres Bein leicht angewinkelt zur Stabilität. Oberes Bein gestreckt auf Hüfthöhe anheben, Fuß dabei Richtung Schienbein hochziehen. Das Bein in vier langsamen Schritten wieder absenken, ohne nach vorn oder hinten zu kippen.',
+    equip: ['Matte'],
+    A: { hip: [78, 84], t: 180, h: 160, fR: [98, 90], fL: [97, 76], hR: [82, 78], hL: [50, 74], kb: -1, kbL: -1, eb: 1, ebL: 1 },
+    B: { hip: [78, 84], t: 180, h: 160, fR: [98, 90], fL: [97, 90], hR: [82, 78], hL: [50, 74] },
+    props: { mat: [26, 120] } },
+  { id: 'standwaage_hip_dip', cat: 'po', name: 'Standwaage mit Hüftarbeit', metric: 'reps', side: true, sets: 3, target: '8 Kippen + 8 Heben',
+    desc: 'Auf einem Bein stehen, Oberkörper 10–20 Grad nach vorn geneigt, Knie leicht gebeugt, in dieser Position bleiben. Eine leichte Hantel (z. B. 3 kg) in der Hand gegenüber dem Standbein halten. Die Bewegung kommt aus dem Becken: erst 8-mal die Hüfte zur Seite kippen, dann 8-mal die Hüfte nach oben ziehen und wieder senken. Der Rücken bleibt lang und gerade.',
+    equip: ['Kurzhantel 3 kg'],
+    A: { hip: [78, 56], t: 78, h: 74, fR: [82, 92], fL: [92, 80], hR: [94, 58], hL: [64, 58], eb: 1 },
+    B: { hip: [78, 52], t: 78, h: 74, fR: [82, 92], fL: [92, 74], hR: [94, 54], hL: [64, 54] },
+    props: { dbR: 1 } },
 
   // ───────── Oberkörper ─────────
   { id: 'pushup', cat: 'ober', name: 'Liegestütz', metric: 'reps', sets: 3, target: 'max.',
@@ -671,8 +707,8 @@ const EXERCISES = [
     A: { hip: [74, 72], t: 52, h: 45, fR: [55, 91], fL: [54, 91], hR: [94, 87], hL: [93, 87], kb: -1, eb: 1 },
     B: { hip: [88, 84], t: 6, h: 8, fR: [55, 91], fL: [54, 91], hR: [138, 87], hL: [137, 87] },
     props: { mat: [40, 150], roller: 1 } },
-  { id: 'ab_pulse', cat: 'core', name: 'Ab-Roller Pulse', metric: 'time', sets: 3, target: '20–30 s',
-    desc: 'Aus der Knie-Position nur wenige Zentimeter vor und zurück rollen, dauerhaft angespannt bleiben.',
+  { id: 'ab_pulse', cat: 'core', name: 'Ab-Roller Pulse', metric: 'reps', sets: 3, target: '15–20',
+    desc: 'Aus der Knie-Position nur wenige Zentimeter vor und zurück rollen, dauerhaft angespannt bleiben. Jedes Vor-und-Zurück zählt als Wiederholung.',
     equip: ['Ab-Roller', 'Matte'],
     A: { hip: [78, 76], t: 32, h: 30, fR: [55, 91], fL: [54, 91], hR: [106, 87], hL: [105, 87], kb: -1, eb: 1 },
     B: { hip: [81, 78], t: 22, h: 22, fR: [55, 91], fL: [54, 91], hR: [113, 87], hL: [112, 87] },
@@ -697,8 +733,8 @@ const EXERCISES = [
     A: { hip: [80, 54], t: 88, fR: [82, 92], fL: [79, 92], hR: [90, 58], hL: [89, 58], rope: 104, eb: 1 },
     B: { hip: [80, 47], t: 90, fR: [84, 84], fL: [78, 88], hR: [90, 52], hL: [89, 52], rope: -20 },
     props: { rope: 1 }, dur: 0.5 },
-  { id: 'mountain_climber', cat: 'cardio', name: 'Mountain Climber', metric: 'time', sets: 3, target: '30 s',
-    desc: 'Aus der Liegestützposition die Knie abwechselnd schnell zur Brust ziehen. Die Hüfte bleibt tief.',
+  { id: 'mountain_climber', cat: 'cardio', name: 'Mountain Climber', metric: 'reps', sets: 3, target: '20–30',
+    desc: 'Aus der Liegestützposition die Knie abwechselnd schnell zur Brust ziehen. Die Hüfte bleibt tief. Jedes Knie zählt als Wiederholung.',
     equip: ['Matte'],
     A: { hip: [74, 76], t: 25, h: 25, kneeR: [57, 84], fR: [42, 92], fL: [41, 92], hR: [98, 92], hL: [97, 92], kb: 1, eb: 1 },
     B: { hip: [74, 74], t: 25, h: 25, kneeR: [91, 80], fR: [78, 90], fL: [41, 92], hR: [98, 92], hL: [97, 92] },
@@ -830,7 +866,8 @@ function demoState() {
 }
 function emptyState(me) {
   return { me: me || 'andi', demo: false, sessions: [], duels: [], active: { andi: null, hanne: null }, seen: {},
-    settings: { sexy: true }, sync: { code: null, since: null, dirty: {}, lastOk: null, err: null } };
+    settings: { sexy: true }, customCards: { 1: [], 2: [], 3: [], 4: [], team: [] },
+    sync: { code: null, since: null, dirty: {}, lastOk: null, err: null } };
 }
 function normalize(s) {
   const base = emptyState(s && s.me);
@@ -839,13 +876,15 @@ function normalize(s) {
   s.active = Object.assign({ andi: null, hanne: null }, s.active || {});
   s.seen = s.seen || {};
   s.settings = Object.assign({ sexy: true }, s.settings || {});
+  s.customCards = Object.assign({ 1: [], 2: [], 3: [], 4: [], team: [] }, s.customCards || {});
+  ['1', '2', '3', '4', 'team'].forEach((k) => { if (!Array.isArray(s.customCards[k])) s.customCards[k] = []; });
   s.sync = Object.assign({ code: null, since: null, dirty: {}, lastOk: null, err: null }, s.sync || {});
   if (s.me !== 'hanne' && s.me !== 'andi') s.me = 'andi';
   return s;
 }
 
 let S = normalize(Store.load() || (ONLINE ? emptyState() : demoState()));
-let UI = { tab: 'heute', filter: 'alle', q: '', sw: null, rest: null, sheetStop: null };
+let UI = { tab: 'heute', filter: 'alle', q: '', sw: null, sheetStop: null };
 const persist = () => Store.save(S);
 // markiert einen Datensatz als geändert, damit er beim nächsten Abgleich hochgeladen wird
 function touch(kind, id) {
@@ -881,6 +920,7 @@ const Sync = (() => {
     let data = null;
     if (kind === 'session') data = S.sessions.find((s) => s.id === id) || null;
     if (kind === 'duel') data = duelFor(id) || null;
+    if (kind === 'meta') data = S.customCards;
     return { kind, id, data };
   }
   async function push() {
@@ -902,6 +942,7 @@ const Sync = (() => {
     let changed = false, max = S.sync.since ? Date.parse(S.sync.since) : 0;
     (rows || []).forEach((r) => {
       max = Math.max(max, Date.parse(r.updated_at) || 0);
+      if (r.kind === 'meta' && r.data) { changed = mergeCustomCards(r.data) || changed; return; }
       if (S.sync.dirty[r.kind + '|' + r.id]) return; // eigene, noch nicht hochgeladene Änderung gewinnt
       if (r.kind === 'session') changed = merge(S.sessions, (s) => s.id === r.id, r.data) || changed;
       if (r.kind === 'duel') changed = merge(S.duels, (d) => d.week === r.id, r.data) || changed;
@@ -1076,10 +1117,26 @@ function jokerFor(who) {
   if (achOn(achById('wocheeisen'), who) && !S.duels.some((d) => d.joker && d.joker.by === who && d.joker.src === 'bonus')) return 'bonus';
   return null;
 }
+// eigene Karten: nie löschbar per Sync, damit ein gleichzeitig hinzugefügter Eintrag beim anderen nicht verschwindet
+function mergeCustomCards(remote) {
+  let changed = false;
+  ['1', '2', '3', '4', 'team'].forEach((k) => {
+    const seen = new Map((S.customCards[k] || []).map((c) => [c.id, c]));
+    (remote[k] || []).forEach((c) => { if (c && c.id && !seen.has(c.id)) { seen.set(c.id, c); changed = true; } });
+    S.customCards[k] = [...seen.values()];
+  });
+  return changed;
+}
+function addCustomCard(stage, text, sexy) {
+  const card = { id: uid(), t: text, s: !!sexy, by: S.me, at: Date.now() };
+  S.customCards[stage] = (S.customCards[stage] || []).concat(card);
+  touch('meta', 'cards'); persist();
+}
+function deckFor(stage) { return (CARDS[stage] || []).concat(S.customCards[stage] || []); }
 function pickCard(stage, exclude) {
   const recent = new Set(S.duels.slice(-4).map((d) => d.card && d.card.t));
   if (exclude) recent.add(exclude);
-  let deck = CARDS[stage].filter((c) => S.settings.sexy || !c.s);
+  let deck = deckFor(stage).filter((c) => S.settings.sexy || !c.s);
   const fresh = deck.filter((c) => !recent.has(c.t));
   if (fresh.length) deck = fresh;
   else if (exclude && deck.length > 1) deck = deck.filter((c) => c.t !== exclude);
@@ -1405,7 +1462,41 @@ function viewErfolge() {
   }).join('');
   return `<div><div class="eyebrow">${me.name} · Erfolge</div><h1>${n} von ${ACHIEVEMENTS.length} freigeschaltet</h1>
     <p class="muted" style="margin:4px 0 0">Joker und Extra-Schutzschild setzt die App bei der Sonntags-Abrechnung automatisch ein. Wunschkarten löst ihr direkt beim anderen ein.</p></div>
-    <div class="badges">${cards}</div>`;
+    <div class="badges">${cards}</div>
+    <button class="card row" style="text-align:left;width:100%" data-act="rewards">
+      <span class="medal" style="width:34px;height:34px;flex:none">${medalSvg(true, 'var(--lemon)')}</span>
+      <span><div style="font-weight:700">Belohnungen &amp; Team-Belohnungen</div><div class="muted" style="font-size:13px">Alle Karten ansehen, eigene hinzufügen</div></span>
+      <span class="spacer"></span><span class="iconbtn" aria-hidden="true">${ICON.chev}</span>
+    </button>`;
+}
+
+// ── Belohnungsübersicht (Kartendeck) ──
+function rewardCardHtml(c, stage) {
+  return `<div class="rcard ${c.id ? 'own' : ''}"><span>${esc(c.t)}</span>
+    <span class="row" style="gap:6px;flex:none">${c.s ? '<span class="chip spicy">pikant</span>' : ''}${c.id ? `<span class="chip" style="font-size:11px">von ${esc(PEOPLE[c.by] ? PEOPLE[c.by].name : c.by)}</span>` : ''}</span></div>`;
+}
+function rewardsBody() {
+  const stage = UI.rewardStage || '1';
+  const chips = [['1', 'Stufe 1'], ['2', 'Stufe 2'], ['3', 'Stufe 3'], ['4', 'Stufe 4'], ['team', 'Team']];
+  const list = deckFor(stage);
+  return `<div class="filters" role="group" aria-label="Stufe" id="reward-tabs">${chips.map(([id, l]) => `<button data-act="reward-stage" data-stage="${id}" aria-pressed="${stage === id}">${l}</button>`).join('')}</div>
+    <div id="reward-list" style="display:flex;flex-direction:column;gap:8px">${list.map((c) => rewardCardHtml(c, stage)).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:12px">
+      <div class="eyebrow">Eigene Karte für ${chips.find((c) => c[0] === stage)[1]} hinzufügen</div>
+      <textarea class="field" id="reward-text" rows="2" placeholder="z. B. Eine Runde Eis ausgeben" style="resize:vertical;font-family:inherit"></textarea>
+      <label class="toggle" style="font-weight:500"><input type="checkbox" id="reward-sexy"><span>Pikant</span></label>
+      <button class="btn btn-lemon btn-block" data-act="reward-add">Hinzufügen</button>
+    </div>`;
+}
+function showRewards() {
+  UI.rewardStage = UI.rewardStage || '1';
+  openSheet(`<div class="row"><h2>Belohnungen</h2><span class="spacer"></span><button class="btn btn-ghost btn-sm" data-act="close">Fertig</button></div>
+    <p class="muted small" style="margin:0">Das sind alle Karten, aus denen die App bei der Sonntagsabrechnung zieht. Ihr könnt jederzeit eigene ergänzen.</p>
+    <div id="rewards-body">${rewardsBody()}</div>`, null, 'rewards');
+}
+function refreshRewards() {
+  const sh = $ov.querySelector('.sheet'); if (!sh || UI.sheetMode !== 'rewards') return;
+  const body = sh.querySelector('#rewards-body'); if (body) body.innerHTML = rewardsBody();
 }
 
 // ── Sheets ──
@@ -1496,7 +1587,7 @@ async function shareInvite() {
 }
 function flash(msg) {
   $toast.innerHTML = `<div class="toast" role="status"><span>${esc(msg)}</span></div>`;
-  setTimeout(() => { if (!UI.rest) $toast.innerHTML = ''; }, 2200);
+  setTimeout(() => { $toast.innerHTML = ''; }, 2200);
 }
 
 // ── Ersteinrichtung der Online-Version ──
@@ -1538,6 +1629,7 @@ async function finishSetup() {
   // bereits lokal vorhandene Einträge mit hochladen
   S.sessions.forEach((s) => { S.sync.dirty['session|' + s.id] = 1; });
   S.duels.forEach((d) => { S.sync.dirty['duel|' + d.week] = 1; });
+  S.sync.dirty['meta|cards'] = 1;
   persist();
   // Code in der Adresse behalten, damit „Zum Home-Bildschirm“ ihn mitnimmt
   try { history.replaceState(null, '', location.pathname + '#code=' + encodeURIComponent(code)); } catch (e) {}
@@ -1615,24 +1707,15 @@ function toggleSw(ei, si) {
   const a = S.active[S.me]; if (!a) return;
   if (UI.sw && UI.sw.ei === ei && UI.sw.si === si) {
     const secs = Math.round((Date.now() - UI.sw.t0) / 1000);
-    a.items[ei].sets[si].v = secs; a.items[ei].sets[si].done = true; UI.sw = null; persist(); render(); startRest(); return;
+    a.items[ei].sets[si].v = secs; a.items[ei].sets[si].done = true; UI.sw = null; persist(); render(); return;
   }
   if (UI.sw) stopRunningSw();
   UI.sw = { ei, si, t0: Date.now() }; render();
 }
 
-// Pausen-Timer nach einem Satz
+// Toast für kurze Meldungen (siehe flash())
 const $toast = document.getElementById('toast');
-function startRest() { UI.rest = Date.now() + 45000; drawRest(); }
-function hideToast() { UI.rest = null; $toast.innerHTML = ''; }
-function drawRest() {
-  if (!UI.rest) return;
-  const left = UI.rest - Date.now();
-  if (left <= 0) { $toast.innerHTML = `<div class="toast" role="status"><span>Pause vorbei. Nächster Satz!</span><span class="spacer"></span><button data-act="hide-toast">OK</button></div>`; UI.rest = null; setTimeout(() => { if (!UI.rest) $toast.innerHTML = ''; }, 4000); try { navigator.vibrate && navigator.vibrate(200); } catch (e) {} return; }
-  const t = $toast.querySelector('.rest-t');
-  if (t) { t.textContent = fmtClock(left); return; }
-  $toast.innerHTML = `<div class="toast" role="status"><span class="t num rest-t">${fmtClock(left)}</span><span>Satzpause</span><span class="spacer"></span><button data-act="hide-toast">Überspringen</button></div>`;
-}
+function hideToast() { $toast.innerHTML = ''; }
 
 function tick() {
   const a = S.active[S.me];
@@ -1646,7 +1729,6 @@ function tick() {
     if (msg) msg.textContent = !a.runSince ? 'Pausiert. Die Zeit läuft erst weiter, wenn du fortsetzt.' : ms >= need ? 'Der Strich ist dir sicher. Alles ab jetzt ist Bonus.' : 'Die Uhr läuft. Ab 15:00 gibt es den Strich.';
     if (UI.sw) { const b = document.getElementById(`sw-${UI.sw.ei}-${UI.sw.si}`); if (b) b.textContent = 'Stopp ' + Math.round((Date.now() - UI.sw.t0) / 1000) + ' s'; }
   }
-  drawRest();
 }
 setInterval(tick, 500);
 
@@ -1695,6 +1777,15 @@ document.addEventListener('click', (ev) => {
     case 'reveal': UI.reveal = UI.reveal || {}; UI.reveal[t.dataset.week] = !UI.reveal[t.dataset.week]; render(); break;
     case 'settings': showSettings(); break;
     case 'sync-now': Sync.run().then(() => { render(); if (UI.sheetMode === 'settings') showSettings(); }); break;
+    case 'rewards': showRewards(); break;
+    case 'reward-stage': UI.rewardStage = t.dataset.stage; refreshRewards(); break;
+    case 'reward-add': {
+      const ta = document.getElementById('reward-text'); const text = ta && ta.value.trim();
+      if (!text) break;
+      const sexy = !!(document.getElementById('reward-sexy') || {}).checked;
+      addCustomCard(UI.rewardStage || '1', text, sexy);
+      refreshRewards(); flash('Karte hinzugefügt'); break;
+    }
     case 'share-invite': shareInvite(); break;
     case 'setup-who': UI.setupWho = t.dataset.who2; UI.setupCode = (document.getElementById('setup-code') || {}).value || ''; render(); break;
     case 'setup-new': UI.setupCode = newCode(); UI.setupErr = null; render(); break;
@@ -1705,7 +1796,7 @@ document.addEventListener('click', (ev) => {
       if (!a) break; const st = a.items[ei].sets[si];
       const inp = document.getElementById(`set-${ei}-${si}`);
       if (!st.done && (st.v === '' || st.v == null) && inp && !inp.value) { st.v = parseInt(EX[a.items[ei].ex].target, 10) || ''; }
-      st.done = !st.done; persist(); render(); if (st.done) startRest(); break;
+      st.done = !st.done; persist(); render(); break;
     }
     case 'addset': if (a) { const it = a.items[ei]; it.sets.push({ v: it.sets.length ? it.sets[it.sets.length - 1].v : '', done: false }); persist(); render(); } break;
     case 'rm': if (a) { a.items.splice(ei, 1); UI.sw = null; persist(); render(); } break;
@@ -1714,7 +1805,6 @@ document.addEventListener('click', (ev) => {
     case 'finish': finish(false); break;
     case 'finish-force': closeSheet(); finish(true); break;
     case 'discard': S.active[S.me] = null; UI.sw = null; persist(); closeSheet(); hideToast(); releaseWake(); UI.tab = 'heute'; render(); break;
-    case 'hide-toast': hideToast(); break;
     case 'clear-demo': dropDemo(); persist(); closeSheet(); render(); break;
   }
 });

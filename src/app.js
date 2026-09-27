@@ -43,7 +43,8 @@ function demoState() {
 }
 function emptyState(me) {
   return { me: me || 'andi', demo: false, sessions: [], duels: [], active: { andi: null, hanne: null }, seen: {},
-    settings: { sexy: true }, sync: { code: null, since: null, dirty: {}, lastOk: null, err: null } };
+    settings: { sexy: true }, customCards: { 1: [], 2: [], 3: [], 4: [], team: [] },
+    sync: { code: null, since: null, dirty: {}, lastOk: null, err: null } };
 }
 function normalize(s) {
   const base = emptyState(s && s.me);
@@ -52,13 +53,15 @@ function normalize(s) {
   s.active = Object.assign({ andi: null, hanne: null }, s.active || {});
   s.seen = s.seen || {};
   s.settings = Object.assign({ sexy: true }, s.settings || {});
+  s.customCards = Object.assign({ 1: [], 2: [], 3: [], 4: [], team: [] }, s.customCards || {});
+  ['1', '2', '3', '4', 'team'].forEach((k) => { if (!Array.isArray(s.customCards[k])) s.customCards[k] = []; });
   s.sync = Object.assign({ code: null, since: null, dirty: {}, lastOk: null, err: null }, s.sync || {});
   if (s.me !== 'hanne' && s.me !== 'andi') s.me = 'andi';
   return s;
 }
 
 let S = normalize(Store.load() || (ONLINE ? emptyState() : demoState()));
-let UI = { tab: 'heute', filter: 'alle', q: '', sw: null, rest: null, sheetStop: null };
+let UI = { tab: 'heute', filter: 'alle', q: '', sw: null, sheetStop: null };
 const persist = () => Store.save(S);
 // markiert einen Datensatz als geändert, damit er beim nächsten Abgleich hochgeladen wird
 function touch(kind, id) {
@@ -94,6 +97,7 @@ const Sync = (() => {
     let data = null;
     if (kind === 'session') data = S.sessions.find((s) => s.id === id) || null;
     if (kind === 'duel') data = duelFor(id) || null;
+    if (kind === 'meta') data = S.customCards;
     return { kind, id, data };
   }
   async function push() {
@@ -115,6 +119,7 @@ const Sync = (() => {
     let changed = false, max = S.sync.since ? Date.parse(S.sync.since) : 0;
     (rows || []).forEach((r) => {
       max = Math.max(max, Date.parse(r.updated_at) || 0);
+      if (r.kind === 'meta' && r.data) { changed = mergeCustomCards(r.data) || changed; return; }
       if (S.sync.dirty[r.kind + '|' + r.id]) return; // eigene, noch nicht hochgeladene Änderung gewinnt
       if (r.kind === 'session') changed = merge(S.sessions, (s) => s.id === r.id, r.data) || changed;
       if (r.kind === 'duel') changed = merge(S.duels, (d) => d.week === r.id, r.data) || changed;
@@ -289,10 +294,26 @@ function jokerFor(who) {
   if (achOn(achById('wocheeisen'), who) && !S.duels.some((d) => d.joker && d.joker.by === who && d.joker.src === 'bonus')) return 'bonus';
   return null;
 }
+// eigene Karten: nie löschbar per Sync, damit ein gleichzeitig hinzugefügter Eintrag beim anderen nicht verschwindet
+function mergeCustomCards(remote) {
+  let changed = false;
+  ['1', '2', '3', '4', 'team'].forEach((k) => {
+    const seen = new Map((S.customCards[k] || []).map((c) => [c.id, c]));
+    (remote[k] || []).forEach((c) => { if (c && c.id && !seen.has(c.id)) { seen.set(c.id, c); changed = true; } });
+    S.customCards[k] = [...seen.values()];
+  });
+  return changed;
+}
+function addCustomCard(stage, text, sexy) {
+  const card = { id: uid(), t: text, s: !!sexy, by: S.me, at: Date.now() };
+  S.customCards[stage] = (S.customCards[stage] || []).concat(card);
+  touch('meta', 'cards'); persist();
+}
+function deckFor(stage) { return (CARDS[stage] || []).concat(S.customCards[stage] || []); }
 function pickCard(stage, exclude) {
   const recent = new Set(S.duels.slice(-4).map((d) => d.card && d.card.t));
   if (exclude) recent.add(exclude);
-  let deck = CARDS[stage].filter((c) => S.settings.sexy || !c.s);
+  let deck = deckFor(stage).filter((c) => S.settings.sexy || !c.s);
   const fresh = deck.filter((c) => !recent.has(c.t));
   if (fresh.length) deck = fresh;
   else if (exclude && deck.length > 1) deck = deck.filter((c) => c.t !== exclude);
@@ -618,7 +639,41 @@ function viewErfolge() {
   }).join('');
   return `<div><div class="eyebrow">${me.name} · Erfolge</div><h1>${n} von ${ACHIEVEMENTS.length} freigeschaltet</h1>
     <p class="muted" style="margin:4px 0 0">Joker und Extra-Schutzschild setzt die App bei der Sonntags-Abrechnung automatisch ein. Wunschkarten löst ihr direkt beim anderen ein.</p></div>
-    <div class="badges">${cards}</div>`;
+    <div class="badges">${cards}</div>
+    <button class="card row" style="text-align:left;width:100%" data-act="rewards">
+      <span class="medal" style="width:34px;height:34px;flex:none">${medalSvg(true, 'var(--lemon)')}</span>
+      <span><div style="font-weight:700">Belohnungen &amp; Team-Belohnungen</div><div class="muted" style="font-size:13px">Alle Karten ansehen, eigene hinzufügen</div></span>
+      <span class="spacer"></span><span class="iconbtn" aria-hidden="true">${ICON.chev}</span>
+    </button>`;
+}
+
+// ── Belohnungsübersicht (Kartendeck) ──
+function rewardCardHtml(c, stage) {
+  return `<div class="rcard ${c.id ? 'own' : ''}"><span>${esc(c.t)}</span>
+    <span class="row" style="gap:6px;flex:none">${c.s ? '<span class="chip spicy">pikant</span>' : ''}${c.id ? `<span class="chip" style="font-size:11px">von ${esc(PEOPLE[c.by] ? PEOPLE[c.by].name : c.by)}</span>` : ''}</span></div>`;
+}
+function rewardsBody() {
+  const stage = UI.rewardStage || '1';
+  const chips = [['1', 'Stufe 1'], ['2', 'Stufe 2'], ['3', 'Stufe 3'], ['4', 'Stufe 4'], ['team', 'Team']];
+  const list = deckFor(stage);
+  return `<div class="filters" role="group" aria-label="Stufe" id="reward-tabs">${chips.map(([id, l]) => `<button data-act="reward-stage" data-stage="${id}" aria-pressed="${stage === id}">${l}</button>`).join('')}</div>
+    <div id="reward-list" style="display:flex;flex-direction:column;gap:8px">${list.map((c) => rewardCardHtml(c, stage)).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:12px">
+      <div class="eyebrow">Eigene Karte für ${chips.find((c) => c[0] === stage)[1]} hinzufügen</div>
+      <textarea class="field" id="reward-text" rows="2" placeholder="z. B. Eine Runde Eis ausgeben" style="resize:vertical;font-family:inherit"></textarea>
+      <label class="toggle" style="font-weight:500"><input type="checkbox" id="reward-sexy"><span>Pikant</span></label>
+      <button class="btn btn-lemon btn-block" data-act="reward-add">Hinzufügen</button>
+    </div>`;
+}
+function showRewards() {
+  UI.rewardStage = UI.rewardStage || '1';
+  openSheet(`<div class="row"><h2>Belohnungen</h2><span class="spacer"></span><button class="btn btn-ghost btn-sm" data-act="close">Fertig</button></div>
+    <p class="muted small" style="margin:0">Das sind alle Karten, aus denen die App bei der Sonntagsabrechnung zieht. Ihr könnt jederzeit eigene ergänzen.</p>
+    <div id="rewards-body">${rewardsBody()}</div>`, null, 'rewards');
+}
+function refreshRewards() {
+  const sh = $ov.querySelector('.sheet'); if (!sh || UI.sheetMode !== 'rewards') return;
+  const body = sh.querySelector('#rewards-body'); if (body) body.innerHTML = rewardsBody();
 }
 
 // ── Sheets ──
@@ -709,7 +764,7 @@ async function shareInvite() {
 }
 function flash(msg) {
   $toast.innerHTML = `<div class="toast" role="status"><span>${esc(msg)}</span></div>`;
-  setTimeout(() => { if (!UI.rest) $toast.innerHTML = ''; }, 2200);
+  setTimeout(() => { $toast.innerHTML = ''; }, 2200);
 }
 
 // ── Ersteinrichtung der Online-Version ──
@@ -751,6 +806,7 @@ async function finishSetup() {
   // bereits lokal vorhandene Einträge mit hochladen
   S.sessions.forEach((s) => { S.sync.dirty['session|' + s.id] = 1; });
   S.duels.forEach((d) => { S.sync.dirty['duel|' + d.week] = 1; });
+  S.sync.dirty['meta|cards'] = 1;
   persist();
   // Code in der Adresse behalten, damit „Zum Home-Bildschirm“ ihn mitnimmt
   try { history.replaceState(null, '', location.pathname + '#code=' + encodeURIComponent(code)); } catch (e) {}
@@ -828,24 +884,15 @@ function toggleSw(ei, si) {
   const a = S.active[S.me]; if (!a) return;
   if (UI.sw && UI.sw.ei === ei && UI.sw.si === si) {
     const secs = Math.round((Date.now() - UI.sw.t0) / 1000);
-    a.items[ei].sets[si].v = secs; a.items[ei].sets[si].done = true; UI.sw = null; persist(); render(); startRest(); return;
+    a.items[ei].sets[si].v = secs; a.items[ei].sets[si].done = true; UI.sw = null; persist(); render(); return;
   }
   if (UI.sw) stopRunningSw();
   UI.sw = { ei, si, t0: Date.now() }; render();
 }
 
-// Pausen-Timer nach einem Satz
+// Toast für kurze Meldungen (siehe flash())
 const $toast = document.getElementById('toast');
-function startRest() { UI.rest = Date.now() + 45000; drawRest(); }
-function hideToast() { UI.rest = null; $toast.innerHTML = ''; }
-function drawRest() {
-  if (!UI.rest) return;
-  const left = UI.rest - Date.now();
-  if (left <= 0) { $toast.innerHTML = `<div class="toast" role="status"><span>Pause vorbei. Nächster Satz!</span><span class="spacer"></span><button data-act="hide-toast">OK</button></div>`; UI.rest = null; setTimeout(() => { if (!UI.rest) $toast.innerHTML = ''; }, 4000); try { navigator.vibrate && navigator.vibrate(200); } catch (e) {} return; }
-  const t = $toast.querySelector('.rest-t');
-  if (t) { t.textContent = fmtClock(left); return; }
-  $toast.innerHTML = `<div class="toast" role="status"><span class="t num rest-t">${fmtClock(left)}</span><span>Satzpause</span><span class="spacer"></span><button data-act="hide-toast">Überspringen</button></div>`;
-}
+function hideToast() { $toast.innerHTML = ''; }
 
 function tick() {
   const a = S.active[S.me];
@@ -859,7 +906,6 @@ function tick() {
     if (msg) msg.textContent = !a.runSince ? 'Pausiert. Die Zeit läuft erst weiter, wenn du fortsetzt.' : ms >= need ? 'Der Strich ist dir sicher. Alles ab jetzt ist Bonus.' : 'Die Uhr läuft. Ab 15:00 gibt es den Strich.';
     if (UI.sw) { const b = document.getElementById(`sw-${UI.sw.ei}-${UI.sw.si}`); if (b) b.textContent = 'Stopp ' + Math.round((Date.now() - UI.sw.t0) / 1000) + ' s'; }
   }
-  drawRest();
 }
 setInterval(tick, 500);
 
@@ -908,6 +954,15 @@ document.addEventListener('click', (ev) => {
     case 'reveal': UI.reveal = UI.reveal || {}; UI.reveal[t.dataset.week] = !UI.reveal[t.dataset.week]; render(); break;
     case 'settings': showSettings(); break;
     case 'sync-now': Sync.run().then(() => { render(); if (UI.sheetMode === 'settings') showSettings(); }); break;
+    case 'rewards': showRewards(); break;
+    case 'reward-stage': UI.rewardStage = t.dataset.stage; refreshRewards(); break;
+    case 'reward-add': {
+      const ta = document.getElementById('reward-text'); const text = ta && ta.value.trim();
+      if (!text) break;
+      const sexy = !!(document.getElementById('reward-sexy') || {}).checked;
+      addCustomCard(UI.rewardStage || '1', text, sexy);
+      refreshRewards(); flash('Karte hinzugefügt'); break;
+    }
     case 'share-invite': shareInvite(); break;
     case 'setup-who': UI.setupWho = t.dataset.who2; UI.setupCode = (document.getElementById('setup-code') || {}).value || ''; render(); break;
     case 'setup-new': UI.setupCode = newCode(); UI.setupErr = null; render(); break;
@@ -918,7 +973,7 @@ document.addEventListener('click', (ev) => {
       if (!a) break; const st = a.items[ei].sets[si];
       const inp = document.getElementById(`set-${ei}-${si}`);
       if (!st.done && (st.v === '' || st.v == null) && inp && !inp.value) { st.v = parseInt(EX[a.items[ei].ex].target, 10) || ''; }
-      st.done = !st.done; persist(); render(); if (st.done) startRest(); break;
+      st.done = !st.done; persist(); render(); break;
     }
     case 'addset': if (a) { const it = a.items[ei]; it.sets.push({ v: it.sets.length ? it.sets[it.sets.length - 1].v : '', done: false }); persist(); render(); } break;
     case 'rm': if (a) { a.items.splice(ei, 1); UI.sw = null; persist(); render(); } break;
@@ -927,7 +982,6 @@ document.addEventListener('click', (ev) => {
     case 'finish': finish(false); break;
     case 'finish-force': closeSheet(); finish(true); break;
     case 'discard': S.active[S.me] = null; UI.sw = null; persist(); closeSheet(); hideToast(); releaseWake(); UI.tab = 'heute'; render(); break;
-    case 'hide-toast': hideToast(); break;
     case 'clear-demo': dropDemo(); persist(); closeSheet(); render(); break;
   }
 });

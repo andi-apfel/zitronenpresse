@@ -66,11 +66,12 @@ const FIG = (() => {
     return `<g class="p-db"><circle cx="${f1(p[0])}" cy="${f1(p[1])}" r="4.4"/><circle class="p-db-hole" cx="${f1(p[0])}" cy="${f1(p[1])}" r="1.3"/></g>`;
   }
 
-  function propsBack(props) {
+  function propsBack(props, J) {
     let s = '';
     const pr = props || {};
     if (pr.mat) s += `<rect class="p-mat" x="${pr.mat[0]}" y="${FLOOR - 1}" width="${pr.mat[1] - pr.mat[0]}" height="3" rx="1.5"/>`;
     if (pr.wall != null) s += `<rect class="p-furn" x="${pr.wall}" y="8" width="5" height="${FLOOR - 8}"/>`;
+    if (pr.ballBack != null && J) s += `<circle class="p-ball" cx="${f1(pr.ballBack)}" cy="${f1(J.hip[1] - 6)}" r="8.5"/>`;
     if (pr.door != null) s += `<rect class="p-door" x="${pr.door}" y="2" width="12" height="${FLOOR - 2}" rx="1"/>`;
     ['sofa', 'chair', 'box'].forEach((k) => {
       if (!pr[k]) return;
@@ -117,7 +118,7 @@ const FIG = (() => {
   function svgInner(ex, k) {
     const P = lerpPose(ex.A, ex.B, k || 0);
     const J = solve(P);
-    let s = propsBack(ex.props);
+    let s = propsBack(ex.props, J);
     // hinteres Bein/Arm heller
     s += `<g class="fig-far">${poly([J.hipL, J.kL, J.fL], 'limb')}${poly([J.shL, J.eL, J.wL], 'limb')}</g>`;
     if (J.front) s += line(J.hipL, J.hipR, 'limb') + line(J.shL, J.shR, 'limb');
