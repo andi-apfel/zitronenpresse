@@ -319,7 +319,9 @@ function deckFor(stage) { return (CARDS[stage] || []).concat(S.customCards[stage
 function pickCard(stage, exclude) {
   const recent = new Set(S.duels.slice(-4).map((d) => d.card && d.card.t));
   if (exclude) recent.add(exclude);
-  let deck = deckFor(stage).filter((c) => S.settings.sexy || !c.s);
+  const all = deckFor(stage);
+  let deck = all.filter((c) => S.settings.sexy || !c.s);
+  if (!deck.length) deck = all; // alles pikant und Schalter aus: trotzdem ziehen, die Karte bleibt verschleiert
   const fresh = deck.filter((c) => !recent.has(c.t));
   if (fresh.length) deck = fresh;
   else if (exclude && deck.length > 1) deck = deck.filter((c) => c.t !== exclude);
@@ -670,15 +672,15 @@ function rewardsBody() {
     <div id="reward-list" style="display:flex;flex-direction:column;gap:8px">${list.map((c) => rewardCardHtml(c, stage)).join('')}</div>
     <div style="display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:12px">
       <div class="eyebrow">Eigene Karte für ${chips.find((c) => c[0] === stage)[1]} hinzufügen</div>
-      <textarea class="field" id="reward-text" rows="2" placeholder="z. B. Eine Runde Eis ausgeben" style="resize:vertical;font-family:inherit"></textarea>
-      <label class="toggle" style="font-weight:500"><input type="checkbox" id="reward-sexy"><span>Pikant</span></label>
+      <textarea class="field" id="reward-text" rows="2" placeholder="z. B. Ein Wunsch, den ihr schon länger im Kopf habt" style="resize:vertical;font-family:inherit"></textarea>
+      <label class="toggle" style="font-weight:500"><input type="checkbox" id="reward-sexy" checked><span>Pikant</span></label>
       <button class="btn btn-lemon btn-block" data-act="reward-add">Hinzufügen</button>
     </div>`;
 }
 function showRewards() {
   UI.rewardStage = UI.rewardStage || '1';
   openSheet(`<div class="row"><h2>Belohnungen</h2><span class="spacer"></span><button class="btn btn-ghost btn-sm" data-act="close">Fertig</button></div>
-    <p class="muted small" style="margin:0">Das sind alle Karten, aus denen die App bei der Sonntagsabrechnung zieht. Ihr könnt jederzeit eigene ergänzen.</p>
+    <p class="muted small" style="margin:0">Das sind alle Karten, aus denen die App bei der Sonntagsabrechnung zieht. Ihr könnt jederzeit eigene ergänzen. Jede Karte ist ein Angebot, kein Muss – ein Nein gilt immer.</p>
     <div id="rewards-body">${rewardsBody()}</div>`, null, 'rewards');
 }
 function refreshRewards() {
