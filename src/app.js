@@ -181,6 +181,12 @@ function bestFor(who, exId) {
   S.sessions.forEach((s) => { if (s.who !== who) return; s.items.forEach((it) => { if (it.ex === exId) it.sets.forEach((st) => { if (st.done && +st.v > best) best = +st.v; }); }); });
   return best;
 }
+// wie oft wurde diese Übung bereits ins Training aufgenommen (für die Sortierung nach Häufigkeit)
+function usageCount(who, exId) {
+  let n = 0;
+  S.sessions.forEach((s) => { if (s.who !== who) return; s.items.forEach((it) => { if (it.ex === exId) n++; }); });
+  return n;
+}
 function lastVal(who, exId) {
   for (let i = S.sessions.length - 1; i >= 0; i--) {
     const s = S.sessions[i]; if (s.who !== who) continue;
@@ -536,7 +542,11 @@ function exListHtml(mode) {
   const list = EXERCISES.filter((e) => (UI.filter === 'alle' || e.cat === UI.filter) && (!q || (e.name + ' ' + e.desc + ' ' + e.equip.join(' ')).toLowerCase().includes(q)));
   let body = '';
   CATS.forEach((c) => {
-    const items = list.filter((e) => e.cat === c.id); if (!items.length) return;
+    const items = list.filter((e) => e.cat === c.id)
+      .map((e, i) => ({ e, i, n: usageCount(S.me, e.id) }))
+      .sort((a, b) => b.n - a.n || a.i - b.i)
+      .map((x) => x.e);
+    if (!items.length) return;
     body += `<div class="cathead"><h3>${c.label}</h3><span class="muted num" style="font-size:13px">${items.length}</span></div><div class="exlist">${items.map((e) => exCard(e, mode)).join('')}</div>`;
   });
   if (!body) body = `<div class="empty">Keine Übung gefunden. Suchbegriff ändern oder Filter auf „Alle“ setzen.</div>`;

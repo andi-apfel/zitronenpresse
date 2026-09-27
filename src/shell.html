@@ -118,6 +118,8 @@ h3{font-size:16px;font-weight:600}
 .filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .filters button{white-space:nowrap;padding:7px 13px;border-radius:999px;background:var(--surface);border:1.5px solid var(--line);font-weight:600;font-size:14px}
 .filters button[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.sheet .filters{flex:none}
+.sheet .filters button:not([aria-pressed="true"]){background:var(--surface2)}
 .search{width:100%;padding:11px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface)}
 .cathead{display:flex;align-items:baseline;gap:8px;margin-top:6px}
 

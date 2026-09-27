@@ -127,6 +127,8 @@ h3{font-size:16px;font-weight:600}
 .filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
 .filters button{white-space:nowrap;padding:7px 13px;border-radius:999px;background:var(--surface);border:1.5px solid var(--line);font-weight:600;font-size:14px}
 .filters button[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.sheet .filters{flex:none}
+.sheet .filters button:not([aria-pressed="true"]){background:var(--surface2)}
 .search{width:100%;padding:11px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface)}
 .cathead{display:flex;align-items:baseline;gap:8px;margin-top:6px}
 
@@ -775,11 +777,12 @@ const STAGES = {
 };
 const CARDS = {
   1: [
-    { t: 'Kaffee oder Tee ans Bett, am nächsten Morgen, mit Verbeugung.' },
     { t: '24 Stunden lang den Gewinner mit einem Ehrentitel ansprechen, z. B. „Eure Hoheit der Hüftstreckung“ oder „Bizeps-Baron“.' },
     { t: 'Der Gewinner bestimmt den nächsten Film oder die nächste Serie, ohne Widerspruch.' },
-    { t: '10 Sekunden Standing Ovations für den Siegertanz des Gewinners.' },
-    { t: 'Spülmaschine ausräumen, zweimal.' },
+    { t: 'Dem Gewinner den nächsten Wecksong aussuchen lassen – und ihn morgen früh tatsächlich einstellen.' },
+    { t: 'Eine spontane Laudatio auf den Gewinner halten, mindestens drei übertriebene Superlative Pflicht.' },
+    { t: 'Den besten Bissen auf dem Teller kampflos an den Gewinner abtreten.' },
+    { t: 'High Five, Verbeugung und ein lautstarkes „Respekt!“ – öffentlich, auch vor Zeugen.' },
     { t: '5 Minuten Nacken- oder Fußmassage.', s: true },
     { t: 'Ein Kuss-Gutschein, 24 Stunden lang jederzeit auf Zuruf einlösbar.', s: true },
     { t: 'Ein handgeschriebener Flirt-Zettel, irgendwo versteckt, wo der Gewinner ihn findet.', s: true },
@@ -787,10 +790,11 @@ const CARDS = {
   2: [
     { t: 'Wochenendfrühstück zubereiten, inklusive Tisch decken.' },
     { t: 'Einen Abend lang Butler oder Butlerin spielen: Geschirrtuch über dem Arm, jede Antwort beginnt mit „Sehr wohl“.' },
-    { t: 'Ein Lied nach Wahl des Gewinners mit voller Inbrunst vorsingen, Kochlöffel als Mikro.' },
     { t: '10 Komplimente am Stück, keins darf sich wiederholen.' },
-    { t: 'Die nächste Wäscherunde komplett übernehmen: waschen, aufhängen, falten.' },
     { t: '24 Stunden lang ein vom Gewinner gewähltes, absurdes Selfie als Profilbild im Familienchat.' },
+    { t: 'Eine kleine Schnitzeljagd durch die Wohnung vorbereiten, am Ziel wartet eine süße Überraschung.' },
+    { t: 'Einen handgeschriebenen Liebesbrief verfassen und dem Gewinner laut vorlesen.' },
+    { t: 'Der Gewinner sucht ein möglichst unvorteilhaftes Foto vom Verlierer aus, das eine Woche lang Hintergrundbild auf dessen Handy bleibt.' },
     { t: '15 Minuten Massage mit Öl, der Gewinner wählt die Körperregion.', s: true },
     { t: 'Der Gewinner wählt das Outfit, das der Verlierer beim nächsten Abend zu Hause trägt.', s: true },
     { t: 'Ein Bad oder eine Dusche mit Kerzen vorbereiten, Begleitung inklusive.', s: true },
@@ -802,22 +806,28 @@ const CARDS = {
     { t: 'Ein Abend, an dem der Gewinner alles entscheidet: Essen, Programm, Schlafenszeit.' },
     { t: 'Ein „Ja-Gutschein“: Die nächste Bitte wird ohne Diskussion erfüllt, im Rahmen des Anstands.' },
     { t: 'Eine Woche lang jeden Morgen das Bett machen.' },
-    { t: 'Ein Strip-Tanz zu einem Song, den der Gewinner aussucht.', s: true },
+    { t: 'Eine improvisierte Tanzperformance zum Lieblingssong des Gewinners aufführen, volle Hingabe, keine halben Sachen.' },
+    { t: 'Einen Loblied-Rap auf den Gewinner freestylen, mindestens 30 Sekunden, Reime sind Pflicht.' },
     { t: '30 Minuten Verwöhn-Massage, Musik und Licht wählt der Gewinner.', s: true },
   ],
   4: [
-    { t: 'Ein komplettes Wochenende Haushalt übernehmen, plus Frühstück ans Bett am Sonntag.' },
-    { t: 'In einem selbst gebastelten Superhelden-Umhang den Müll rausbringen, Foto als Beweis.' },
     { t: 'Eine Liebeserklärung als Sprachnachricht im Stil eines Fußballkommentators, mindestens 60 Sekunden.' },
     { t: 'Ein Überraschungsdate planen und bezahlen, der Gewinner erfährt vorher nur die Uhrzeit.' },
-    { t: 'Eine Woche Kaffee-Service jeden Morgen.' },
+    { t: 'Einen ganzen Tag als persönlicher Assistent des Gewinners fungieren: Termine, Snacks, gute Laune, alles auf Abruf.' },
+    { t: 'Ein selbst gedrehtes Mini-Musikvideo für den Gewinner produzieren, mit Kostüm und eigener Choreografie.' },
+    { t: 'Eine Überraschungs-Unternehmung für einen halben Tag organisieren, das Ziel bleibt bis zur Abfahrt geheim.' },
+    { t: 'Einen Ehrenpokal basteln und dem Gewinner bei einer kleinen Zeremonie mit Dankesrede überreichen.' },
     { t: 'Der Gewinner schreibt das Drehbuch für einen gemeinsamen Abend, der Verlierer spielt mit.', s: true },
     { t: 'Verführungsabend inszenieren: Deko, Musik, Outfit, alles vom Verlierer vorbereitet.', s: true },
   ],
   team: [
-    { t: 'Gemeinsam essen gehen, Restaurant per Münzwurf.' },
-    { t: 'Ein Wellness-Abend zu Hause mit Gesichtsmasken.' },
     { t: 'Ein Ausflug am Wochenende, den beide abwechselnd planen.' },
+    { t: 'Gemeinsam ein neues Rezept ausprobieren und beim Kochen laut die passende Playlist mitsingen.' },
+    { t: 'Ein Spieleabend mit dem Lieblingsspiel, Verlierer der ersten Runde räumt danach auf.' },
+    { t: 'Zu einer Veranstaltung gehen, die schon lange auf der gemeinsamen Liste steht.' },
+    { t: 'Ein Ausflug in die Natur mit Picknick, Handys bleiben in der Tasche.' },
+    { t: 'Filmabend mit Lieblingssnacks, Decke und Kerzen, ganz ohne Ablenkung von außen.' },
+    { t: 'Ein neues Café oder Restaurant in der Stadt ausprobieren, das noch keiner von euch kennt.' },
   ],
 };
 
@@ -1003,6 +1013,12 @@ function bestFor(who, exId) {
   let best = 0;
   S.sessions.forEach((s) => { if (s.who !== who) return; s.items.forEach((it) => { if (it.ex === exId) it.sets.forEach((st) => { if (st.done && +st.v > best) best = +st.v; }); }); });
   return best;
+}
+// wie oft wurde diese Übung bereits ins Training aufgenommen (für die Sortierung nach Häufigkeit)
+function usageCount(who, exId) {
+  let n = 0;
+  S.sessions.forEach((s) => { if (s.who !== who) return; s.items.forEach((it) => { if (it.ex === exId) n++; }); });
+  return n;
 }
 function lastVal(who, exId) {
   for (let i = S.sessions.length - 1; i >= 0; i--) {
@@ -1359,7 +1375,11 @@ function exListHtml(mode) {
   const list = EXERCISES.filter((e) => (UI.filter === 'alle' || e.cat === UI.filter) && (!q || (e.name + ' ' + e.desc + ' ' + e.equip.join(' ')).toLowerCase().includes(q)));
   let body = '';
   CATS.forEach((c) => {
-    const items = list.filter((e) => e.cat === c.id); if (!items.length) return;
+    const items = list.filter((e) => e.cat === c.id)
+      .map((e, i) => ({ e, i, n: usageCount(S.me, e.id) }))
+      .sort((a, b) => b.n - a.n || a.i - b.i)
+      .map((x) => x.e);
+    if (!items.length) return;
     body += `<div class="cathead"><h3>${c.label}</h3><span class="muted num" style="font-size:13px">${items.length}</span></div><div class="exlist">${items.map((e) => exCard(e, mode)).join('')}</div>`;
   });
   if (!body) body = `<div class="empty">Keine Übung gefunden. Suchbegriff ändern oder Filter auf „Alle“ setzen.</div>`;
