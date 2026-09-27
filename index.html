@@ -1065,8 +1065,17 @@ function planFor(who, date) {
 const SETTLE_HOUR = 20;
 const other = (who) => (who === 'hanne' ? 'andi' : 'hanne');
 function settleTime(mon) { const t = addDays(mon, 6); t.setHours(SETTLE_HOUR, 0, 0, 0); return t; }
-// die jüngste Woche, deren Sonntag 20 Uhr schon vorbei ist
-function dueMonday(now) { const mon = mondayOf(now); return now >= settleTime(mon) ? mon : addDays(mon, -7); }
+// Haben beide ihren Sonntags-Strich schon (vor 20 Uhr), kann sich nichts mehr ändern: Abrechnung sofort offen.
+// Rückgabe: Zeitpunkt, ab dem die Woche abgerechnet werden kann
+function openTime(mon) {
+  const cut = +settleTime(mon); const sun = dayKey(addDays(mon, 6));
+  const first = (who) => { let t = null; S.sessions.forEach((s) => { if (s.who === who && s.counted && s.day === sun && s.start < cut && (t === null || s.start < t)) t = s.start; }); return t; };
+  const h = first('hanne'), a = first('andi');
+  return h !== null && a !== null ? new Date(Math.max(h, a)) : settleTime(mon);
+}
+const earlyOpen = (mon) => +openTime(mon) < +settleTime(mon);
+// die jüngste Woche, deren Abrechnung schon offen ist (Sonntag 20 Uhr oder früher, wenn beide fertig sind)
+function dueMonday(now) { const mon = mondayOf(now); return now >= openTime(mon) ? mon : addDays(mon, -7); }
 const duelFor = (week) => S.duels.find((d) => d.week === week);
 function stageFor(diff) { return diff <= 0 ? 0 : diff === 1 ? 1 : diff <= 3 ? 2 : diff <= 5 ? 3 : 4; }
 function extraShieldFree(who, week) {
@@ -1284,10 +1293,11 @@ function viewHeute() {
   const me = PEOPLE[S.me];
   const mon = mondayOf(now);
   const wH = weekStrokes('hanne'), wA = weekStrokes('andi');
-  const settledNow = now >= settleTime(mon);
+  const settledNow = now >= openTime(mon);
   const verdict = settledNow ? '' : liveVerdict(outcome(mon));
   const daysLeft = Math.round((addDays(mon, 6) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
-  const chip = settledNow ? 'Abrechnung ist durch' : daysLeft === 0 ? 'Abrechnung heute 20 Uhr' : daysLeft === 1 ? 'Abrechnung morgen 20 Uhr' : `Abrechnung in ${daysLeft} Tagen`;
+  const chip = settledNow ? (earlyOpen(mon) && now < settleTime(mon) ? 'Beide fertig · Abrechnung offen' : 'Abrechnung ist durch')
+    : daysLeft === 0 ? 'Abrechnung heute, spätestens 20 Uhr' : daysLeft === 1 ? 'Abrechnung morgen' : `Abrechnung in ${daysLeft} Tagen`;
   const settle = settlementHtml(now);
   const fighter = (who, w) => {
     const st = streak(who); const P = PEOPLE[who];
