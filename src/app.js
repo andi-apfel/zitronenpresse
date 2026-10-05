@@ -27,6 +27,8 @@ const mondayOf = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); const w
 const uid = () => Math.random().toString(36).slice(2, 10);
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmtClock = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+// für die Ring-Uhr: ab 100 Minuten in Stunden, sonst passt es nicht in den Kreis
+const fmtRing = (ms) => (ms >= 6e6 ? Math.floor(ms / 36e5) + ':' + String(Math.floor(ms / 6e4) % 60).padStart(2, '0') + ' h' : fmtClock(ms));
 
 function demoState() {
   const sessions = [];
@@ -628,18 +630,29 @@ function viewVerlauf() {
   const tH = tot('hanne'), tA = tot('andi');
   const log = S.sessions.slice().sort((a, b) => b.start - a.start).slice(0, 25).map((s) => {
     const d = new Date(s.start);
-    return `<div class="it"><span class="sw8" style="background:${PEOPLE[s.who].color}"></span>
+    const mine = s.who === S.me;
+    return `<${mine ? `button data-act="sess-edit" data-id="${s.id}" style="width:100%;text-align:left"` : 'div'} class="it"><span class="sw8" style="background:${PEOPLE[s.who].color}"></span>
       <span><div style="font-weight:700">${PEOPLE[s.who].name} · ${d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' })}</div><div class="muted" style="font-size:13px">${s.items.map((i) => EX[i.ex] ? EX[i.ex].name : i.ex).join(', ')}</div></span>
-      <span class="num" style="text-align:right;font-weight:700">${Math.round(s.durationMs / 60000)} Min<br><span style="font-size:12px;color:${s.counted ? 'var(--lime-ink)' : 'var(--ink2)'}">${s.counted ? 'Strich' : 'kein Strich'}</span></span></div>`;
+      <span class="num" style="text-align:right;font-weight:700">${Math.round(s.durationMs / 60000)} Min<br><span style="font-size:12px;color:${s.counted ? 'var(--lime-ink)' : 'var(--ink2)'}">${s.counted ? 'Strich' : 'kein Strich'}</span></span></${mine ? 'button' : 'div'}>`;
   }).join('');
   return `${demoBanner()}<div><div class="eyebrow">Strichliste</div><h1>Letzte 5 Wochen</h1></div>
   <section class="card"><div class="cal">${cells}</div>
     <div class="row" style="margin-top:10px;gap:14px;font-size:13px;font-weight:600"><span class="row" style="gap:6px"><span class="pip" style="width:9px;height:9px;border-radius:50%;background:var(--hanne)"></span>Hanne</span><span class="row" style="gap:6px"><span class="pip" style="width:9px;height:9px;border-radius:50%;background:var(--andi)"></span>Andi</span></div></section>
   <section class="stats">
-    <div class="stat" style="background:var(--hanne-soft)"><div class="k">Hanne gesamt</div><div class="v num">${tH.n} Striche</div><div class="k num">${tH.min} Minuten</div></div>
-    <div class="stat" style="background:var(--andi-soft)"><div class="k">Andi gesamt</div><div class="v num">${tA.n} Striche</div><div class="k num">${tA.min} Minuten</div></div>
+    <div class="stat" style="background:var(--hanne-soft)"><div class="k">Hanne gesamt</div><div class="v num">${tH.n} ${tH.n === 1 ? 'Strich' : 'Striche'}</div><div class="k num">${tH.min} Minuten</div></div>
+    <div class="stat" style="background:var(--andi-soft)"><div class="k">Andi gesamt</div><div class="v num">${tA.n} ${tA.n === 1 ? 'Strich' : 'Striche'}</div><div class="k num">${tA.min} Minuten</div></div>
   </section>
-  <section class="card"><h2 style="margin-bottom:4px">Einheiten</h2><div class="log">${log || '<div class="empty">Noch keine Einheit gespeichert.</div>'}</div></section>`;
+  <section class="card"><h2 style="margin-bottom:4px">Einheiten</h2><p class="muted small" style="margin:0 0 4px">Eigene Einheit antippen, um die Dauer zu korrigieren.</p><div class="log">${log || '<div class="empty">Noch keine Einheit gespeichert.</div>'}</div></section>`;
+}
+
+function showSessEdit(id) {
+  const s = S.sessions.find((x) => x.id === id); if (!s || s.who !== S.me) return;
+  const d = new Date(s.start); const min = Math.round(s.durationMs / 60000);
+  openSheet(`<div class="row"><h2>Einheit korrigieren</h2><span class="spacer"></span><button class="btn btn-ghost btn-sm" data-act="close">Abbrechen</button></div>
+    <p class="muted small" style="margin:0">${d.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}, Start ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} · ${esc(s.items.map((i) => EX[i.ex] ? EX[i.ex].name : i.ex).join(', ') || 'keine Übungen')}</p>
+    <label class="row" style="gap:10px"><input class="field num" id="sess-min" type="number" inputmode="numeric" min="1" max="600" value="${min}" style="width:110px;text-align:center;font-weight:700"><span style="font-weight:600">Minuten</span></label>
+    <p class="muted small" style="margin:0">Ab ${STRICH_MIN} Minuten zählt die Einheit als Strich.</p>
+    <button class="btn btn-lemon btn-block" data-act="sess-save" data-id="${s.id}">Speichern</button>`);
 }
 
 function viewErfolge() {
@@ -860,12 +873,28 @@ function stopRunningSw() {
   if (st) { st.v = Math.round((Date.now() - UI.sw.t0) / 1000); st.done = true; }
   UI.sw = null; persist();
 }
-function finish(force) {
+// Uhr läuft auffällig lange: wahrscheinlich wurde „Beenden“ vergessen
+const LONG_MIN = 90;
+// Vorschlag: Zeit bis zur letzten Aktivität (abgehakter Satz o. Ä.) plus 2 Minuten
+function suggestMin(a) {
+  if (!a.lastAct) return null;
+  return Math.max(1, Math.round((a.lastAct - a.start) / 60000) + 2);
+}
+function finish(force, fixMs, asIs) {
   const a = S.active[S.me]; if (!a) return;
   stopRunningSw();
-  const ms = elapsed(a); const min = ms / 60000;
+  const ms = fixMs != null ? fixMs : elapsed(a); const min = ms / 60000;
+  if (fixMs == null && !asIs && min >= LONG_MIN) {
+    const sug = suggestMin(a);
+    openSheet(`<h2>Stopp vergessen?</h2>
+      <p style="margin:0" class="muted">Die Uhr lief ${Math.round(min)} Minuten.${sug ? ` Dein letzter abgehakter Satz war nach etwa ${sug - 2} Minuten.` : ''} Trag ein, wie lange du wirklich trainiert hast.</p>
+      <label class="row" style="gap:10px"><input class="field num" id="fix-min" type="number" inputmode="numeric" min="1" max="600" value="${sug != null ? Math.min(sug, Math.round(min)) : 20}" style="width:110px;text-align:center;font-weight:700"><span style="font-weight:600">Minuten</span></label>
+      <button class="btn btn-lemon btn-block" data-act="finish-fix">Korrigiert speichern</button>
+      <button class="btn btn-ghost btn-block" data-act="finish-asis">Stimmt so, ${Math.round(min)} Minuten</button>`);
+    return;
+  }
   const doneSets = a.items.reduce((n, it) => n + it.sets.filter((s) => s.done).length, 0);
-  if (!force && min < STRICH_MIN) {
+  if (!force && fixMs == null && min < STRICH_MIN) {
     openSheet(`<h2>Noch ${Math.ceil(STRICH_MIN - min)} Minuten bis zum Strich</h2>
       <p style="margin:0" class="muted">Du hast ${fmtClock(ms)} Minuten trainiert und ${doneSets} ${doneSets === 1 ? 'Satz' : 'Sätze'} abgehakt. Ein Strich zählt erst ab ${STRICH_MIN} Minuten.</p>
       <button class="btn btn-lemon btn-block" data-act="close">Weitermachen</button>
@@ -920,12 +949,12 @@ function tick() {
   const a = S.active[S.me];
   if (UI.tab === 'training' && a) {
     const ms = elapsed(a); const need = STRICH_MIN * 60000;
-    const c = document.getElementById('clock'); if (c) c.textContent = fmtClock(ms);
+    const c = document.getElementById('clock'); if (c) c.textContent = fmtRing(ms);
     const fg = document.getElementById('ringfg'); if (fg) fg.setAttribute('stroke-dashoffset', String(289 * (1 - Math.min(1, ms / need))));
     const ring = document.getElementById('ring'); if (ring) ring.classList.toggle('done', ms >= need);
     const sub = document.getElementById('clocksub'); if (sub) sub.textContent = ms >= need ? 'Strich sicher' : 'noch ' + fmtClock(need - ms);
     const msg = document.getElementById('clockmsg');
-    if (msg) msg.textContent = !a.runSince ? 'Pausiert. Die Zeit läuft erst weiter, wenn du fortsetzt.' : ms >= need ? 'Der Strich ist dir sicher. Alles ab jetzt ist Bonus.' : 'Die Uhr läuft. Ab 15:00 gibt es den Strich.';
+    if (msg) msg.textContent = !a.runSince ? 'Pausiert. Die Zeit läuft erst weiter, wenn du fortsetzt.' : ms >= LONG_MIN * 60000 ? 'Läuft ungewöhnlich lange. Stopp vergessen? Beim Beenden kannst du die Zeit korrigieren.' : ms >= need ? 'Der Strich ist dir sicher. Alles ab jetzt ist Bonus.' : 'Die Uhr läuft. Ab 15:00 gibt es den Strich.';
     if (UI.sw) { const b = document.getElementById(`sw-${UI.sw.ei}-${UI.sw.si}`); if (b) b.textContent = 'Stopp ' + Math.round((Date.now() - UI.sw.t0) / 1000) + ' s'; }
   }
 }
@@ -945,6 +974,7 @@ document.addEventListener('click', (ev) => {
   if (!act && t.dataset.tab) { UI.tab = t.dataset.tab; closeSheet(); render(); window.scrollTo(0, 0); return; }
   const a = S.active[S.me];
   const ei = +t.dataset.ei, si = +t.dataset.si;
+  if (a && ['done', 'addset', 'pick', 'sw', 'rm'].includes(act)) a.lastAct = Date.now();
   switch (act) {
     case 'close-scrim': if (ev.target === t) closeSheet(); break;
     case 'close': closeSheet(); refreshIfStale(); break;
@@ -1003,6 +1033,20 @@ document.addEventListener('click', (ev) => {
     case 'pause': if (a) { if (a.runSince) { a.acc += Date.now() - a.runSince; a.runSince = null; releaseWake(); } else { a.runSince = Date.now(); requestWake(); } persist(); render(); } break;
     case 'finish': finish(false); break;
     case 'finish-force': closeSheet(); finish(true); break;
+    case 'finish-asis': closeSheet(); finish(false, null, true); break;
+    case 'finish-fix': {
+      const m = parseInt((document.getElementById('fix-min') || {}).value, 10);
+      if (!(m > 0)) break;
+      closeSheet(); finish(true, m * 60000); break;
+    }
+    case 'sess-edit': showSessEdit(t.dataset.id); break;
+    case 'sess-save': {
+      const sess = S.sessions.find((x) => x.id === t.dataset.id);
+      const m = parseInt((document.getElementById('sess-min') || {}).value, 10);
+      if (!sess || !(m > 0)) break;
+      sess.durationMs = m * 60000; sess.counted = m >= STRICH_MIN;
+      touch('session', sess.id); persist(); closeSheet(); render(); flash('Einheit korrigiert'); break;
+    }
     case 'discard': S.active[S.me] = null; UI.sw = null; persist(); closeSheet(); hideToast(); releaseWake(); UI.tab = 'heute'; render(); break;
     case 'clear-demo': dropDemo(); persist(); closeSheet(); render(); break;
   }
@@ -1025,7 +1069,7 @@ document.addEventListener('input', (ev) => {
   if (t.dataset.act === 'setv') {
     const a = S.active[S.me]; if (!a) return;
     const it = a.items[+t.dataset.ei]; const st = it && it.sets[+t.dataset.si]; if (!st) return;
-    st.v = t.value; persist();
+    st.v = t.value; a.lastAct = Date.now(); persist();
   }
 });
 // Ansicht auffrischen, wenn ein neuer Tag oder die Sonntags-Abrechnung beginnt
